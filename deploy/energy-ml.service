@@ -1,0 +1,28 @@
+# Unidad systemd para energy-ml (uvicorn detrás de nginx).
+# Instalar en el VPS como /etc/systemd/system/energy-ml.service
+# Puerto 8020: el 8000–8014 ya están ocupados por otras apps del VPS.
+
+[Unit]
+Description=energy-ml (NILM) - FastAPI/uvicorn
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=energy-ml
+Group=energy-ml
+WorkingDirectory=/opt/energy-ml
+Environment=MEDICIONES_SOURCE=local
+ExecStart=/opt/energy-ml/.venv/bin/uvicorn src.main:app --host 127.0.0.1 --port 8020 --proxy-headers --forwarded-allow-ips=127.0.0.1
+Restart=on-failure
+RestartSec=5
+
+# Endurecimiento básico: solo lectura salvo data/ (caché, modelos, salidas)
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/energy-ml/data
+
+[Install]
+WantedBy=multi-user.target
